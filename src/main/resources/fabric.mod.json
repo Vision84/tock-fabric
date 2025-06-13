@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "id": "tock",
+  "version": "${version}",
+  "name": "Tock",
+  "description": "Smarter than Starlight. Leaner than Lithium. Tock makes every tick count.",
+  "authors": [
+    "Tock Team"
+  ],
+  "contact": {
+    "homepage": "https://github.com/tockmod/tock",
+    "sources": "https://github.com/tockmod/tock"
+  },
+  "license": "MIT",
+  "icon": "assets/tock/icon.png",
+  "environment": "server",
+  "entrypoints": {
+    "main": [
+      "net.tockmod.TockMod"
+    ],
+    "server": [
+      "net.tockmod.TockServerMod"
+    ]
+  },
+  "mixins": [
+    "tock.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.15.10",
+    "minecraft": "~1.21.5",
+    "java": ">=21",
+    "fabric-api": "*"
+  },
+  "suggests": {
+    "another-mod": "*"
+  }
+} 

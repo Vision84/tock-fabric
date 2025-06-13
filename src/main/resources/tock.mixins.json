@@ -1,0 +1,24 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "net.tockmod.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "server.ServerWorldMixin",
+    "server.ServerChunkManagerMixin",
+    "server.ServerTickSchedulerMixin",
+    "entity.MobSpawnerMixin",
+    "entity.MobMixin"
+  ],
+  "client": [],
+  "server": [
+    "server.ServerWorldMixin",
+    "server.ServerChunkManagerMixin",
+    "server.ServerTickSchedulerMixin",
+    "entity.MobSpawnerMixin",
+    "entity.MobMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+} 
