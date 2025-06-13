@@ -1,5 +1,4 @@
-# .github/workflows/build.yml
-name: Build and Test
+name: Build Fabric Mod
 
 on:
   push:
@@ -8,13 +7,14 @@ on:
 
 jobs:
   build:
+    name: Build and Upload JAR
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
+    - name: Checkout repo
       uses: actions/checkout@v4
 
-    - name: Set up Java
+    - name: Set up JDK 21
       uses: actions/setup-java@v4
       with:
         java-version: '21'
@@ -26,18 +26,18 @@ jobs:
         path: |
           ~/.gradle/caches
           ~/.gradle/wrapper
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
         restore-keys: |
-          ${{ runner.os }}-gradle
+          gradle-${{ runner.os }}-
 
-    - name: Grant execute permission for Gradle wrapper
+    - name: Make gradlew executable
       run: chmod +x ./gradlew
 
-    - name: Build the mod
+    - name: Build mod
       run: ./gradlew build
 
-    - name: Upload build artifact
+    - name: Upload built mod jar
       uses: actions/upload-artifact@v4
       with:
-        name: tock-mod-jar
+        name: tock-alpha-build
         path: build/libs/*.jar
