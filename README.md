@@ -34,7 +34,7 @@ A server-side-only Fabric mod that brings adaptive, low-overhead tick scheduling
 ## Installation
 
 1. Install [Fabric Loader](https://fabricmc.net/use/)
-2. Download the latest release from the [releases page](https://github.com/tockmod/tock/releases)
+2. Download the latest release from the [releases page](https://github.com/Vision84/tock-fabric/releases)
 3. Place the jar file in your server's `mods` folder
 4. Start your server
 
