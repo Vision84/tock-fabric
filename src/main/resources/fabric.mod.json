@@ -3,13 +3,12 @@
   "id": "tock",
   "version": "${version}",
   "name": "Tock",
-  "description": "Smarter than Starlight. Leaner than Lithium. Tock makes every tick count.",
+  "description": "Tock makes every tick count.",
   "authors": [
-    "Tock Team"
+    "Arnav Bonigala"
   ],
   "contact": {
-    "homepage": "https://github.com/tockmod/tock",
-    "sources": "https://github.com/tockmod/tock"
+    "email": "bonigala.arnav@gmail.com"
   },
   "license": "MIT",
   "icon": "assets/tock/icon.png",
@@ -30,8 +29,5 @@
     "minecraft": "~1.21.5",
     "java": ">=21",
     "fabric-api": "*"
-  },
-  "suggests": {
-    "another-mod": "*"
   }
 } 

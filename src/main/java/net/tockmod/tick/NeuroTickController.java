@@ -23,7 +23,7 @@ public class NeuroTickController {
         
         // If we're over budget, reduce processing
         if (isOverBudget) {
-            LOGGER.debug("Server is over tick budget, reducing processing");
+            LOGGER.warn("Server is over tick budget (avg: {:.2f}ms), reducing processing", getAverageTickTime());
             // TODO: Implement tick reduction logic
         }
     }
@@ -41,7 +41,24 @@ public class NeuroTickController {
         isOverBudget = tickTime > ModConfig.getInstance().maxTickTime;
         
         if (isOverBudget) {
-            LOGGER.warn("Tick took {}ms (budget: {}ms)", tickTime, ModConfig.getInstance().maxTickTime);
+            LOGGER.warn("Tick took {}ms (budget: {}ms, avg: {:.2f}ms)", 
+                tickTime, 
+                ModConfig.getInstance().maxTickTime,
+                getAverageTickTime());
+        } else if (tickTime > ModConfig.getInstance().maxTickTime * 0.8) {
+            LOGGER.info("Tick approaching budget limit: {}ms (budget: {}ms)", 
+                tickTime, 
+                ModConfig.getInstance().maxTickTime);
+        }
+
+        // Log tick timing summary every 100 ticks
+        if (tickTimeAverage.getCount() % 100 == 0) {
+            LOGGER.info("=== Tick Timing Summary ===");
+            LOGGER.info("Last tick: {}ms", tickTime);
+            LOGGER.info("Average tick: {:.2f}ms", getAverageTickTime());
+            LOGGER.info("Min tick: {:.2f}ms", tickTimeAverage.getMin());
+            LOGGER.info("Max tick: {:.2f}ms", tickTimeAverage.getMax());
+            LOGGER.info("Over budget: {}", isOverBudget);
         }
     }
 
@@ -62,6 +79,9 @@ public class NeuroTickController {
         private final double[] values;
         private int index = 0;
         private double sum = 0;
+        private int count = 0;
+        private double min = Double.MAX_VALUE;
+        private double max = Double.MIN_VALUE;
 
         public RollingAverage(int size) {
             this.size = size;
@@ -73,10 +93,27 @@ public class NeuroTickController {
             values[index] = value;
             sum += value;
             index = (index + 1) % size;
+            count = Math.min(count + 1, size);
+            
+            // Update min/max
+            min = Math.min(min, value);
+            max = Math.max(max, value);
         }
 
         public double getAverage() {
-            return sum / size;
+            return count > 0 ? sum / count : 0;
+        }
+
+        public int getCount() {
+            return count;
+        }
+
+        public double getMin() {
+            return min;
+        }
+
+        public double getMax() {
+            return max;
         }
     }
 } 

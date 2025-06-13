@@ -1,4 +1,4 @@
-package net.tockmod.mixin.server;
+package net.tockmod.mixin;
 
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;

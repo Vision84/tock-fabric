@@ -10,14 +10,18 @@ import org.slf4j.LoggerFactory;
 import java.util.Comparator;
 import java.util.PriorityQueue;
 import java.util.Queue;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.time.Instant;
 
 public class SmartScheduler {
     private static final Logger LOGGER = LoggerFactory.getLogger("Tock/Scheduler");
     private final Queue<ScheduledTask> taskQueue = new PriorityQueue<>(Comparator.comparingInt(ScheduledTask::getPriority));
     private final Map<BlockPos, ScheduledTask> pendingTasks = new ConcurrentHashMap<>();
     private final AtomicLong lastTaskId = new AtomicLong(0);
+    private final AtomicLong lastSummaryTime = new AtomicLong(0);
+    private static final long SUMMARY_INTERVAL = 5000; // 5 seconds
 
     public void onServerTickStart(MinecraftServer server) {
         if (!ModConfig.getInstance().schedulerEnabled) {
@@ -25,7 +29,17 @@ public class SmartScheduler {
         }
 
         // Process high priority tasks
-        processTasks(server);
+        int processedTasks = processTasks(server);
+        if (processedTasks > 0) {
+            LOGGER.info("Processed {} tasks in this tick ({} remaining)", processedTasks, taskQueue.size());
+        }
+
+        // Log task summary every 5 seconds
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastSummaryTime.get() > SUMMARY_INTERVAL) {
+            logTaskSummary();
+            lastSummaryTime.set(currentTime);
+        }
     }
 
     public void onServerTickEnd(MinecraftServer server) {
@@ -34,6 +48,7 @@ public class SmartScheduler {
 
     public void scheduleTask(ServerWorld world, BlockPos pos, Runnable task, int priority) {
         if (!ModConfig.getInstance().schedulerEnabled) {
+            LOGGER.debug("Scheduler disabled, executing task immediately at {}", pos);
             task.run();
             return;
         }
@@ -50,25 +65,61 @@ public class SmartScheduler {
         if (ModConfig.getInstance().enablePreemptiveCancellation) {
             ScheduledTask existingTask = pendingTasks.get(pos);
             if (existingTask != null && existingTask.priority <= priority) {
-                LOGGER.debug("Cancelling redundant task at {}", pos);
+                LOGGER.warn("Cancelling redundant task at {} (priority: {}, existing: {})", 
+                    pos, 
+                    priority, 
+                    existingTask.priority);
                 return;
             }
         }
 
         pendingTasks.put(pos, scheduledTask);
         taskQueue.offer(scheduledTask);
+        LOGGER.info("Scheduled task at {} with priority {} (queue size: {})", 
+            pos, 
+            priority, 
+            taskQueue.size());
     }
 
-    private void processTasks(MinecraftServer server) {
+    private int processTasks(MinecraftServer server) {
         int processedTasks = 0;
         while (!taskQueue.isEmpty() && processedTasks < 1000) { // Limit tasks per tick
             ScheduledTask task = taskQueue.poll();
             if (task != null) {
-                task.run();
-                pendingTasks.remove(task.pos);
-                processedTasks++;
+                try {
+                    LOGGER.debug("Executing task at {} with priority {} (world: {})", 
+                        task.pos, 
+                        task.priority,
+                        task.world.getRegistryKey().getValue());
+                    task.run();
+                    pendingTasks.remove(task.pos);
+                    processedTasks++;
+                } catch (Exception e) {
+                    LOGGER.error("Task at {} failed: {}", task.pos, e.getMessage(), e);
+                }
             }
         }
+        return processedTasks;
+    }
+
+    private void logTaskSummary() {
+        LOGGER.info("=== Task Summary ===");
+        LOGGER.info("Total pending tasks: {}", taskQueue.size());
+        LOGGER.info("Tasks by world:");
+        taskQueue.stream()
+            .collect(java.util.stream.Collectors.groupingBy(
+                task -> task.world.getRegistryKey().getValue(),
+                java.util.stream.Collectors.counting()))
+            .forEach((world, count) -> 
+                LOGGER.info("  {}: {} tasks", world, count));
+        
+        LOGGER.info("Tasks by priority:");
+        taskQueue.stream()
+            .collect(java.util.stream.Collectors.groupingBy(
+                task -> task.priority,
+                java.util.stream.Collectors.counting()))
+            .forEach((priority, count) -> 
+                LOGGER.info("  Priority {}: {} tasks", priority, count));
     }
 
     private static class ScheduledTask implements Runnable {
@@ -77,6 +128,7 @@ public class SmartScheduler {
         private final BlockPos pos;
         private final Runnable task;
         private final int priority;
+        private final Instant scheduledTime;
 
         public ScheduledTask(long id, ServerWorld world, BlockPos pos, Runnable task, int priority) {
             this.id = id;
@@ -84,6 +136,7 @@ public class SmartScheduler {
             this.pos = pos;
             this.task = task;
             this.priority = priority;
+            this.scheduledTime = Instant.now();
         }
 
         @Override
